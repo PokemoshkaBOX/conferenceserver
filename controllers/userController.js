@@ -301,6 +301,31 @@ class UserController{
             next(ApiError.badRequest(e.message));
         }
     }
+
+    async getOneUserInfoFromConference(req, res, next) {
+        try {
+            const userInfo = await user_info.findAll();
+            const users = await User.findAll();
+
+            // Преобразовать данные в объекты, где ключ - это userId
+            const usersMap = users.reduce((acc, user) => {
+                acc[user.id] = user;
+                return acc;
+            }, {});
+
+            // Объединить данные
+            const combinedData = userInfo.map(info => ({
+                email: usersMap[info.userId].email,
+                name: info.name,
+                surname: info.surname,
+                patronymic: info.patronymic
+            }));
+
+            return res.json(combinedData);
+        } catch (e) {
+            next(ApiError.badRequest(e.message));
+    }
+}
 }
 
 module.exports = new UserController()

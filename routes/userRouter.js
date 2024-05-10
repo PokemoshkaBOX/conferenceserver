@@ -21,5 +21,6 @@ router.get('/onearticle', userController.oneArticle)
 router.post('/teacherarticle', userController.uploadTeacherArticle)
 router.post('/addarticle', userController.AddArticle)
 router.get('/getoneuserinfo', userController.GetOneUserInfo)
+router.get('/getoneuserinfofromconference', userController.getOneUserInfoFromConference)
 
 module.exports = router
