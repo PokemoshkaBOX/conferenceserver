@@ -8,7 +8,7 @@ const TokenService = require("./token-service")
 const UserDto = require("../dtos/user-dto")
 const {TokenSchema} = require("../models/token-models");
 class UserService{
-    async registration(email, password, name, surname, patronymic){
+    async registration(email, password, name, surname, patronymic, phone){
         const candidate = await User.findOne({where: {email: email}})
         if(candidate){
             throw ApiError.badRequest(`Пользователь с адресом ${email} уже существует`)
@@ -17,20 +17,24 @@ class UserService{
         const activationLink = uuid.v4();
         const role = "USER"
         const user = await User.create({email, password: hashPassword, activationLink, role})
-        console.log(user)
-        const phone = "89011750709"
-        await user_info.create({user_id: user.id, name, surname, patronymic, phone, userId: user.id})
-        console.log(email)
-        await mailService.sendActivationMail(email, `${process.env.API_URL}/api/user/activate/${activationLink}`);
-        console.log("Userdtu")
-        const userDto = new UserDto(user);
-        const tokens = TokenService.generateTokens({...userDto})
-        await  TokenService.saveToken(userDto.id, tokens.refreshToken);
-        console.log("User dto", userDto)
-        return{
-            ...tokens,
-            user: userDto
+        if(user) {
+            console.log(user)
+            await user_info.create({user_id: user.id, name, surname, patronymic, phone, userId: user.id})
+            console.log(email)
+            await mailService.sendActivationMail(email, `${process.env.API_URL}/api/user/activate/${activationLink}`);
+            console.log("Userdtu")
+            const userDto = new UserDto(user);
+            const tokens = TokenService.generateTokens({...userDto})
+            if(tokens) {
+                await TokenService.saveToken(userDto.id, tokens.refreshToken);
+                console.log("User dto", userDto)
+                return {
+                    ...tokens,
+                    user: userDto
+                }
+            }
         }
+
     }
 
     async activate(activationLink){

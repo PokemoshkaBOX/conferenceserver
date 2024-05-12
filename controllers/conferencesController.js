@@ -187,12 +187,13 @@ class ConferencesController{
 
     async getOneParticipant(req, res, next) {
         const {id} = req.params
-        const participant = await participants.findAll({
-            where: {
-                conferenceId: id
-            }
-        })
+            const participant = await participants.findAll({
+                where: {
+                    conferenceId: id,
+                }
+            })
         return res.json(participant)
+
     }
 
     async updateUserStatus(req, res, next) {

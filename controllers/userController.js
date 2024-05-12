@@ -16,9 +16,9 @@ class UserController{
             if(!errors.isEmpty()){
                 return next(ApiError.badRequest("Ошибка при валидации", errors.array()))
             }
-            const {email, password, name, surname, patronymic} = req.body;
-            console.log(email, password, name, surname, patronymic)
-            const userData = await userService.registration(email, password, name, surname, patronymic);
+            const {email, password, name, surname, patronymic, phone} = req.body;
+            console.log(email, password, name, surname, patronymic, phone)
+            const userData = await userService.registration(email, password, name, surname, patronymic, phone);
             res.cookie('refreshToken', userData.refreshToken, {maxAge: 30*24*60*60*1000, httpOnly: true})
             return res.json(userData);
         }
@@ -142,8 +142,11 @@ class UserController{
     async conferenceUser(req, res, next){
 
         try {
-        const { id } = req.query;
-
+        const { id, user} = req.query;
+        const query = {}
+        if (user){
+            query.authors = {[Op.substring]: user}
+        }
         // Найти участников конференции с ролью "докладчик"
         const conferenceParticipants = await participants.findAll({
             where: {
@@ -154,16 +157,24 @@ class UserController{
 
         // Собрать массив идентификаторов участников
         const participantIds = conferenceParticipants.map(participant => participant.id);
+        if(user) {
+            const conferenceArticles = await article.findAll({
+                where: {
+                    participantId: participantIds,
+                    query
+                }
+            });
+            return res.json(conferenceArticles);
+        }
+        else{
+            const conferenceArticles = await article.findAll({
+                where: {
+                    participantId: participantIds,
+                }
+            });
+            return res.json(conferenceArticles);
+        }
 
-        // Найти статьи, связанные с участниками конференции
-        const conferenceArticles = await article.findAll({
-            where: {
-                participantId: participantIds
-            }
-        });
-        console.log("conferenceArticles", conferenceArticles)
-
-        return res.json(conferenceArticles);
         } catch (e) {
             next(ApiError.badRequest(e.message));
         }
@@ -318,7 +329,8 @@ class UserController{
                 email: usersMap[info.userId].email,
                 name: info.name,
                 surname: info.surname,
-                patronymic: info.patronymic
+                patronymic: info.patronymic,
+                phone: info.phone
             }));
 
             return res.json(combinedData);
